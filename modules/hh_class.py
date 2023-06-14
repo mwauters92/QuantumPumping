@@ -222,7 +222,7 @@ class hhm:
 
         #op_dict = {'tot_num': tot_num, 'current': tot_current}
         #op_dict = {'tot_num': tot_num, 'current': current_density}
-        op_dict = {'tot_num': tot_num, 'current': tot_cur, 
+        op_dict = {'tot_num': tot_num, 'current': tot_current, 
                    'current_density': current_density}
 
         return op_dict 
