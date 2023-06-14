@@ -7,7 +7,7 @@
 #------------------------------------------------------------------------------
 
 import sys
-sys.path.append('../')
+sys.path.append('./')
 import numpy as np 
 import pickle
 from argparse import ArgumentParser
@@ -79,7 +79,6 @@ if __name__ == "__main__":
     mp = {'omega': args.omega, 'n_p': args.num_periods, 'n_t': 300, 
           'pbc': False} 
 
-    mp = {}
     mp['Ej0'] = 1.0  
     mp['Ec0'] = 4.0 
     mp['delta_n'] = 0.5
