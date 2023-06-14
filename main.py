@@ -1,8 +1,25 @@
-import argparse
-from tqdm import tqdm
-from modules import *
+#------------------------------------------------------------------------------
+# main.py
+#------------------------------------------------------------------------------
 
-parser=argparse.ArgumentParser(description='This script calculates ldos and total current in a chain of SC islands connected to a SC lead in each end')
+#------------------------------------------------------------------------------
+# import libraries
+#------------------------------------------------------------------------------
+
+import sys
+sys.path.append('../')
+import numpy as np 
+import pickle
+from argparse import ArgumentParser
+from tqdm import tqdm
+from modules import * 
+import time
+
+#------------------------------------------------------------------------------
+# argparse 
+#------------------------------------------------------------------------------
+
+parser=ArgumentParser(description='This script calculates ldos and total current in a chain of SC islands connected to a SC lead in each end')
 
 # Definition of constants
 parser.add_argument('Nphi', type=int, help='Number of values of the phase difference of left and right lead between 0 and 2pi')
@@ -22,55 +39,145 @@ parser.add_argument('--omega', default=0.05, type=float, help='The frequency wit
 parser.add_argument('--El_start', default=0.1, type=float, help='Initial value of the coupling with the leads')
 parser.add_argument('--El_end', default=1.5, type=float, help='Final value of the coupling with the leads')
 
-argums = parser.parse_args()
+parser.add_argument('--unit_cells', default=2, type=int,
+                    help='Number of unit cells.')
+parser.add_argument('--qinf', default=False, type=bool, 
+                    help=('Calculate the pumped charge in the infinite-time \
+                    limit.') )
+parser.add_argument('--et', default=False, type=bool, 
+                    help='Calculate the instantaneous many-body spectrum.')
+parser.add_argument('--qephi', default=False, type=bool,
+                    help='Calculate the quasi-energy spectrum.') 
 
-# parameters
+args = parser.parse_args()
 
-NEl=argums.NEl
-Nphi=argums.Nphi
+#------------------------------------------------------------------------------
+# simulation type 
+#------------------------------------------------------------------------------
 
-El_start=argums.El_start
-El_end=argums.El_end
-Ej0=argums.Ej0
+def set_sim_type(mp, args):
+    
+    if args.qinf:
+        mp['sim_type'] = "Pumped charge at the infinite time."
+    if args.et:
+        mp['sim_type'] = "Instantaneous many-body spectrum."
+    if args.qephi:
+        mp['sim_type'] = "Many-body quasi-energy spectrum."
 
-Eltab = np.linspace(Ej0*El_start, Ej0*El_end, NEl)
-phleadtab = np.linspace(0, 2*np.pi, Nphi, endpoint=False)
+#------------------------------------------------------------------------------
+# main
+#------------------------------------------------------------------------------
 
-hh = hhm() 
-hh.set_lattice_pars(L=argums.L, pbc=argums.PBC)
-hh.set_dynamic_pars(omega=argums.omega, n_p=argums.num_periods, n_t=argums.Nt)
+if __name__ == "__main__":
 
-curr = np.zeros( (NEl, Nphi ) ) 
+    #-------------------------------------------------------
 
-for j, el in tqdm( enumerate(Eltab), desc="El" ):
+    week = 60 
+    num = args.num_file
+    to_save = True 
 
-    for k, ph in tqdm( enumerate(phleadtab), desc="ph" ):
- 
-        # set values to the Hamiltonian parameters  
-        hh.set_Htpars(El=el, phase=ph, delta_n=argums.delta_n, Ej0=argums.Ej0,
-                      Ec0=argums.Ec0, noise_Ej=argums.noise_Ej, 
-                      noise_Ec=argums.noise_Ec, Mcut=argums.Mcut )
+    mp = {'omega': args.omega, 'n_p': args.num_periods, 'n_t': 300, 
+          'pbc': False} 
 
-        # initialize qobs class
-        hhqob = ojja_qobs(hh)
+    mp = {}
+    mp['Ej0'] = 1.0  
+    mp['Ec0'] = 4.0 
+    mp['delta_n'] = 0.5
+    mp['noise_Ej'] = 0.0
+    mp['noise_Ec'] = 0.0
 
-        # calculates the many-body spectrum and gap
-        #_ = hhqob.instantaneous_energies()
-        #eg = hhqob.find_gap()
-        
-        hhqob.create_floquet()
-        q = hhqob.q_floquet()
+    mp['N'] = args.unit_cells
+    mp['L'] = 3 * mp['N']
+    mp['Mcut'] = 2
 
-        curr[j][k] = q
+    mp['El_start'] = 0.1
+    mp['El_end'] = 1.5
+    mp['el_num'] = 1 
+    mp['phi_num'] = 20 
+    
+    mp['comments'] = ['']
+    mp['filename'] = f'w{week}_n{num}_hhwb_TEST'    
 
-print(curr)
-print('done')
-# Then save it in some form.
+    set_sim_type(mp, args)
 
+    # temporary 
+    path_name = "data"
+    mp['path_name'] = path_name
+    
+    #-------------------------------------------------------
 
-#dens_t = res.expect[:L]
-#curr_t = res.expect[L:][0]
-#densitytab[phlead,El]=dens_t
-#currenttab[phlead,El]=curr_t
+    ej0 = mp['Ej0'] 
+    #el_tab = np.linspace( ej0 * mp['El_start'], ej0 * mp['El_end'], 
+    #                      mp['el_num'])
+    el_tab = [1.0]
+    phi_tab = np.linspace(0.0, 2.0 * np.pi, mp['phi_num'], endpoint=False)
+    
+    #-------------------------------------------------------
 
+    data_new = {'el_ls': el_tab, 'phi_ls': phi_tab}
 
+    start = time.perf_counter()
+
+    # ----------------
+
+    hh = hhm() 
+    hh.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
+    hh.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
+
+    curr = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
+
+    for j, el in tqdm( enumerate(el_tab), desc="El" ):
+
+        for k, ph in tqdm( enumerate(phi_tab), desc="ph" ):
+
+     
+            # set values to the Hamiltonian parameters  
+            hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], 
+                          Ej0=mp['Ej0'], Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
+                          noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'] )
+
+            # initialize qobs class
+            hhqob = ojja_qobs(hh)
+
+            if args.qinf: 
+
+                hhqob.create_floquet()
+                q = hhqob.q_floquet()
+                curr[j][k] = q
+
+            if args.et:
+            
+                res = hhqob.instantaneous_energies()
+                eg = hhqob.find_gap()
+
+            if args.qephi:
+
+                continue
+
+    data_new = {'current': curr}
+
+    # ----------------
+
+    end = time.perf_counter()
+    dur = end - start
+    mp['comments'] += [f'Run time (in secs): {dur:.2f}'] 
+
+    data = {'model_pars': mp, 'data': data_new} 
+
+    #-------------------------------------------------------
+     
+    # save data 
+
+    if to_save:
+        with open(f'{path_name}/{mp["filename"]}.pickle', 'wb') as handle:
+            pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    #-------------------------------------------------------
+    
+    print("Simulations have been completed!")
+
+    #-------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# end of .py file
+#------------------------------------------------------------------------------
