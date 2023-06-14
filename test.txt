@@ -1,0 +1,3 @@
+A short message from the local computer. 
+
+Commit via terminal.
