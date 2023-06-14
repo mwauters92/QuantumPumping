@@ -7,3 +7,5 @@ scipy
 tqdm
 qutip 5.0
 IT IS NOT COMPATIBLE WITH QUTIP 4.7 (YET)
+
+this is a test
