@@ -32,8 +32,8 @@ parser.add_argument('--num_periods', metavar='', default=1, type=int,
                     help='number of periods used in the time evolution.')
 parser.add_argument('--nt', metavar='', default=301, type=int, 
                     help='Number of values of the time between 0 and 2pi.')
-parser.add_argument('--nuc', metavar='', default=2, type=int, 
-                    help='Number of unit cells.')
+parser.add_argument('--n_sites', metavar='', default=6, type=int, 
+                    help='The number of sites.')
 parser.add_argument('--PBC', action='store_true',  
                     help='Periodic boundary conditions')
 
@@ -44,9 +44,11 @@ parser.add_argument('--ec0', metavar='', default=1.0, type=float,
                     help=('The on-site charging energy. Can be either a single\
                     variable or a list of length L.'))
 parser.add_argument('--delta_n', metavar='', default=None, type=float, 
-                    help='The amplitude of the oscillations in the induced charge.')
+                    help=('The amplitude of the oscillations in the induced\
+                    charge.') )
 parser.add_argument('--ave_ng', metavar='', default=0.5, type=float, 
-                    help='The average value of the induced charge, sets the chemical potential.')
+                    help=('The average value of the induced charge, sets\
+                    the chemical potential.') )
 parser.add_argument('--noise_Ej', metavar='', default=0.0, type=float, 
                     help=('Noise of the Josephson coupling. Can be either a \
                     single variable or a list of length L-1.') )
@@ -75,8 +77,8 @@ parser.add_argument('--et', action='store_true',
 parser.add_argument('--qephi', action='store_true', 
                     help='Calculate the quasi-energy spectrum.') 
 
-parser.add_argument('--path_name', type=str,default='data', 
-                    help='path to the folder where to save the results') 
+parser.add_argument('--path_name', metavar='', type=str, default='data', 
+                    help='Path to the folder where to save the results.') 
 
 args = parser.parse_args()
 
@@ -112,7 +114,7 @@ if __name__ == "__main__":
     mp['Ec0'] = args.ec0
 
     if args.delta_n is None:
-        mp['delta_n'] = 0.5*args.ej0/args.ec0 
+        mp['delta_n'] = 0.5 * args.ej0 / args.ec0 
     else: 
         mp['delta_n'] = args.delta_n 
     
@@ -120,8 +122,7 @@ if __name__ == "__main__":
     mp['noise_Ej'] = args.noise_Ej
     mp['noise_Ec'] = args.noise_Ec
 
-    mp['N'] = args.nuc
-    mp['L'] = 3 * mp['N']
+    mp['L'] = args.n_sites 
     mp['Mcut'] = args.Mcut
 
     mp['El_start'] = args.El_start 
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     mp['phi_num'] = args.Nphi
     
     mp['comments'] = ['']
-    mp['filename'] = f'w{week}_n{num}_hhwb_TEST'    
+    mp['filename'] = f'w{week}_n{num}_hhwb'    
 
     set_sim_type(mp, args)
 
@@ -163,10 +164,10 @@ if __name__ == "__main__":
 
         for k, ph in tqdm( enumerate(phi_tab), desc="ph" ):
 
-     
             # set values to the Hamiltonian parameters  
-            hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], n_ave=mp['average_ng'], 
-                          Ej0=mp['Ej0'], Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
+            hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], 
+                          n_ave=mp['average_ng'], Ej0=mp['Ej0'], 
+                          Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
                           noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'] )
 
             # initialize qobs class
@@ -186,7 +187,6 @@ if __name__ == "__main__":
                 etspec[j][k] = res['inst_energies']
 
             if args.qephi:
-
                 continue
 
     if args.qinf: 
