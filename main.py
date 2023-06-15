@@ -43,8 +43,10 @@ parser.add_argument('--ej0', metavar='', default=0.2, type=float,
 parser.add_argument('--ec0', metavar='', default=1.0, type=float, 
                     help=('The on-site charging energy. Can be either a single\
                     variable or a list of length L.'))
-parser.add_argument('--delta_n', metavar='', default=0.1, type=float, 
-                    help='The amplitude of the ng oscillations away from 1/2.')
+parser.add_argument('--delta_n', metavar='', default=None, type=float, 
+                    help='The amplitude of the oscillations in the induced charge.')
+parser.add_argument('--ave_ng', metavar='', default=0.5, type=float, 
+                    help='The average value of the induced charge, sets the chemical potential.')
 parser.add_argument('--noise_Ej', metavar='', default=0.0, type=float, 
                     help=('Noise of the Josephson coupling. Can be either a \
                     single variable or a list of length L-1.') )
@@ -60,8 +62,7 @@ parser.add_argument('--El_start', metavar='', default=0.1, type=float,
 parser.add_argument('--El_end', metavar='', default=1.5, type=float, 
                     help='Final value of the coupling with the leads.')
 parser.add_argument('--Nel', metavar='', default=20, type=int, 
-                    help=('Number of values of the lead-island coupling\
-                    between 0.1Ej0 and 1.5Ej0') )
+                    help=('Number of values of the lead-island coupling') )
 parser.add_argument('--Nphi', metavar='', default=20, type=int, 
                     help=('Number of values of the phase difference of left\
                     and right lead between 0 and 2pi.') )
@@ -73,6 +74,9 @@ parser.add_argument('--et', action='store_true',
                     help='Calculate the instantaneous many-body spectrum.')
 parser.add_argument('--qephi', action='store_true', 
                     help='Calculate the quasi-energy spectrum.') 
+
+parser.add_argument('--path_name', type=str,default='data', 
+                    help='path to the folder where to save the results') 
 
 args = parser.parse_args()
 
@@ -105,8 +109,14 @@ if __name__ == "__main__":
           'pbc': args.PBC} 
 
     mp['Ej0'] = args.ej0  
-    mp['Ec0'] = args.ec0 
-    mp['delta_n'] = args.delta_n 
+    mp['Ec0'] = args.ec0
+
+    if args.delta_n is None:
+        mp['delta_n'] = 0.5*args.ej0/args.ec0 
+    else: 
+        mp['delta_n'] = args.delta_n 
+    
+    mp['average_ng'] = args.ave_ng
     mp['noise_Ej'] = args.noise_Ej
     mp['noise_Ec'] = args.noise_Ec
 
@@ -124,8 +134,8 @@ if __name__ == "__main__":
 
     set_sim_type(mp, args)
 
-    path_name = "data"
-    mp['path_name'] = path_name
+    path_name = args.path_name
+    mp['path_name'] = args.path_name
     
     #-------------------------------------------------------
 
@@ -155,7 +165,7 @@ if __name__ == "__main__":
 
      
             # set values to the Hamiltonian parameters  
-            hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], 
+            hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], n_ave=mp['average_ng'], 
                           Ej0=mp['Ej0'], Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
                           noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'] )
 
@@ -167,7 +177,7 @@ if __name__ == "__main__":
                 hhqob.create_floquet()
                 q = hhqob.q_floquet()
                 curr[j][k] = q
-
+                print(f'Charge in the infinite time limit :{q}')
             if args.et:
             
                 res = hhqob.instantaneous_energies()
@@ -183,8 +193,8 @@ if __name__ == "__main__":
         data_new['current'] = curr
     if args.et: 
         data_new['energies'] = etspec 
-    if args.qephi:
-        continue
+    #if args.qephi:
+        #continue
 
     # ----------------
 
@@ -208,6 +218,7 @@ if __name__ == "__main__":
     
     print("------------------------------------------------")
     print("--> End of simulations!")
+    print(f"Run time (in secs): {dur:.2f}") 
     print("------------------------------------------------")
 
     #-------------------------------------------------------
