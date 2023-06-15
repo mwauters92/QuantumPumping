@@ -20,7 +20,7 @@ from scipy.integrate import simpson
 # qobs class
 #------------------------------------------------------------------------------
 
-class ojja_qobs():
+class Qdynamics():
 
     def __init__(self, model):
         
@@ -546,7 +546,6 @@ class ojja_qobs():
         #overlap between Floquet states and initial state
         rho0_f = np.array([np.abs(self.rho0.overlap( UF_s )) for UF_s in self.UF])
         
-        
         # FSstate_t is a (n_t,Nh) array that contains the evolved Floquet states
         FState_t = np.tensordot(self.U.reshape([n_t,1]),self.UF.reshape([1,Nh]),axes=[1,0])
         
@@ -612,7 +611,8 @@ class ojja_qobs():
         rho0_f = np.dot( UF_dag, np.dot( rho0, UF ) )
 
         # create a stack of Us
-        U_ext = np.vstack( [U]*n_evolve )   # U iso only defined in the first period   
+        # U is only defined in the first period   
+        U_ext = np.vstack( [U]*n_evolve )   
         
         # create a stack of the ith powers of the floquet operator
         temp_ls = [] 

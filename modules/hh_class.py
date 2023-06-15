@@ -14,7 +14,7 @@ from qutip import Qobj, num, qeye, tensor, ket2dm, expect, create, destroy
 # hhm class 
 #------------------------------------------------------------------------------
 
-class hhm: 
+class HH_model: 
 
     def __init__(self):
         """
@@ -105,6 +105,7 @@ class hhm:
     def set_Htpars(self, El, phase, delta_n=None, n_ave=0.5, Ej0=1.0, Ec0=4.0,  
                    noise_Ej=0.0, noise_Ec=0.0, Mcut=2, return_pars=False):
 
+
         L = self.system_size 
          
 
@@ -129,7 +130,8 @@ class hhm:
         self.noise_Ej = noise_Ej
         self.noise_Ec = noise_Ec
         
-        self.Hsc_J = self.Hsc_Josephson(self.system_size, self.Ej, self.El, self.phase, self.Mcut, self.pbc)
+        self.Hsc_J = self.Hsc_Josephson(self.system_size, self.Ej, self.El, 
+                                        self.phase, self.Mcut, self.pbc)
         
         error_msg = ('Hsc_J is not a Hermitian operator. You may want to \
                      reconsider what you are doing.')
@@ -137,7 +139,7 @@ class hhm:
 
 
     def hamiltonian(self, t, args={}):
-        '''
+        """
         Defines the time-dependent part of the Hamiltonian, i.e. the on-site energy. 
         It requires Hsc_J to be defined before this function is called.
         The function is written so that it is callable by qutip.mesolve()
@@ -146,7 +148,7 @@ class hhm:
         
         Returns:
             H+Hsc_J: total time-dependent Hamiltonian
-        '''
+        """
        
         L = self.system_size      
         

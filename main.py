@@ -24,6 +24,9 @@ msg = ('This script calculates ldos and total current in a chain of SC\
 parser = ArgumentParser(description=msg, 
                         formatter_class=ArgumentDefaultsHelpFormatter)
 
+parser.add_argument('--code', metavar='', required=True, type=int, 
+                    help='Set a code name to the file.')
+
 # to be removed?
 parser.add_argument('--Mcut', metavar='', default=2, type=int, 
                     help=('Truncation of the local Hilbert space. Mcut=2 for\
@@ -89,11 +92,16 @@ args = parser.parse_args()
 def set_sim_type(mp, args):
     
     if args.qinf:
-        mp['sim_type'] = "Pumped charge at the infinite time."
+        mp['sim_type'] = 'Pumped charge at the infinite time.'
+        filename_ext = 'qinf'
     if args.et:
-        mp['sim_type'] = "Instantaneous many-body spectrum."
+        mp['sim_type'] = 'Instantaneous many-body spectrum.'
+        filename_ext = 'specEt'
     if args.qephi:
-        mp['sim_type'] = "Many-body quasi-energy spectrum."
+        mp['sim_type'] = 'Many-body quasi-energy spectrum.'
+        filename_ext = 'specQEphi'
+
+    return filename_ext
 
 #------------------------------------------------------------------------------
 # main
@@ -102,10 +110,9 @@ def set_sim_type(mp, args):
 if __name__ == "__main__":
 
     #-------------------------------------------------------
-
-    week = 60 
-    num = 100 #args.num_file
-    to_save = True 
+    
+    code = args.code 
+    to_save = True      # whether to save data or not  
 
     mp = {'omega': args.omega, 'n_p': args.num_periods, 'n_t': args.nt, 
           'pbc': args.PBC} 
@@ -131,18 +138,24 @@ if __name__ == "__main__":
     mp['phi_num'] = args.Nphi
     
     mp['comments'] = ['']
-    mp['filename'] = f'w{week}_n{num}_hhwb'    
+    filename_ext = set_sim_type(mp, args)
 
-    set_sim_type(mp, args)
+    mp['filename'] = f'hhwb_{filename_ext}_{code}'    
 
     path_name = args.path_name
     mp['path_name'] = args.path_name
     
     #-------------------------------------------------------
 
-    el_tab = np.linspace( mp['Ej0'] * mp['El_start'], mp['Ej0'] * mp['El_end'], 
-                          mp['el_num'])
-    #el_tab = [1.0]
+    ej0 = mp['Ej0']
+
+    # if the number of El values is 1, then the el_tab list contains
+    # only the [ej0*El_start] 
+    if mp['el_num'] == 1:
+        el_tab = [ ej0 * mp['El_start'] ]
+    else:
+        el_tab = np.linspace( ej0 * mp['El_start'], ej0 * mp['El_end'], 
+                              mp['el_num'])
     phi_tab = np.linspace(0.0, 2.0 * np.pi, mp['phi_num'], endpoint=False)
     
     #-------------------------------------------------------
@@ -153,15 +166,19 @@ if __name__ == "__main__":
 
     # ----------------
 
-    hh = hhm() 
+    hh = HH_model() 
     hh.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
     hh.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
 
     curr = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
     etspec = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
+    qespec_fen_ls = [] 
+    qespec_focc_ls = [] 
 
     for j, el in tqdm( enumerate(el_tab), desc="El" ):
-
+    
+        qespec_fen_ls.append( [] ) 
+        qespec_focc_ls.append( [] ) 
         for k, ph in tqdm( enumerate(phi_tab), desc="ph" ):
 
             # set values to the Hamiltonian parameters  
@@ -170,8 +187,8 @@ if __name__ == "__main__":
                           Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
                           noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'] )
 
-            # initialize qobs class
-            hhqob = ojja_qobs(hh)
+            # initialize the dynamics class
+            hhqob = Qdynamics(hh)
 
             if args.qinf: 
 
@@ -179,6 +196,7 @@ if __name__ == "__main__":
                 q = hhqob.q_floquet()
                 curr[j][k] = q
                 print(f'Charge in the infinite time limit :{q}')
+
             if args.et:
             
                 res = hhqob.instantaneous_energies()
@@ -187,14 +205,19 @@ if __name__ == "__main__":
                 etspec[j][k] = res['inst_energies']
 
             if args.qephi:
-                continue
+
+                felements = hhqob.create_floquet(return_floquet_elements=True)
+                f_occ = hhqob.floquet_projection()
+                qespec_fen_ls[j].append( felements['f_energies'] )
+                qespec_focc_ls[j].append( f_occ )
 
     if args.qinf: 
         data_new['current'] = curr
     if args.et: 
         data_new['energies'] = etspec 
-    #if args.qephi:
-        #continue
+    if args.qephi:
+        data_new['f_energies'] = qespec_fen_ls
+        data_new['f_occ'] = qespec_focc_ls
 
     # ----------------
 
