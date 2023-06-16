@@ -196,10 +196,14 @@ if __name__ == "__main__":
 
             # initialize the dynamics class
             hhqob = Qdynamics(hh)
+            
+
+            if args.qinf or args.qephi:
+                
+                hhqob.create_floquet()
 
             if args.qinf: 
 
-                hhqob.create_floquet()
                 q = hhqob.q_floquet()
                 curr[j][k] = q
                 print(f'Charge in the infinite time limit :{q}')
@@ -213,9 +217,7 @@ if __name__ == "__main__":
 
             if args.qephi:
 
-                #felements = hhqob.create_floquet(return_floquet_elements=True)
                 f_occ = hhqob.floquet_projection()
-                #qespec_fen_ls[j].append( felements['f_energies'] )
                 qespec_fen_ls[j].append( hhqob.f_energies )
                 qespec_focc_ls[j].append( f_occ )
 
