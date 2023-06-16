@@ -213,9 +213,10 @@ if __name__ == "__main__":
 
             if args.qephi:
 
-                felements = hhqob.create_floquet(return_floquet_elements=True)
+                #felements = hhqob.create_floquet(return_floquet_elements=True)
                 f_occ = hhqob.floquet_projection()
-                qespec_fen_ls[j].append( felements['f_energies'] )
+                #qespec_fen_ls[j].append( felements['f_energies'] )
+                qespec_fen_ls[j].append( hhqob.f_energies )
                 qespec_focc_ls[j].append( f_occ )
 
     if args.qinf: 
