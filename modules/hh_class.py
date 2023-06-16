@@ -103,7 +103,7 @@ class HH_model:
 
 
     def set_Htpars(self, El, phase, delta_n=None, n_ave=0.5, Ej0=1.0, Ec0=4.0,  
-                   noise_Ej=0.0, noise_Ec=0.0, Mcut=2, return_pars=False):
+                   U=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2, return_pars=False):
 
 
         L = self.system_size 
@@ -111,6 +111,7 @@ class HH_model:
 
         self.phase, self.El = phase, El
         self.Ec0, self.Ej0 = Ec0, Ej0
+        self.U = U
         
         if delta_n is None:
             self.delta_n = 0.5*Ej0/Ec0
@@ -164,6 +165,13 @@ class HH_model:
             op_list[j] = self.Ec[j] * ( num(self.Mcut) - ng[j] )**2
             H += tensor(op_list)
             op_list[j] = qeye(self.Mcut)
+
+        if self.U>0.0:
+            for j in range(L-1):
+                op_list[j] =  ( num(self.Mcut) - ng[j] )
+                op_list[j+1] = ( num(self.Mcut) - ng[j+1] )             
+                H += self.U * tensor(op_list)
+                op_list[j] = qeye(self.Mcut)
 
         
         return H + self.Hsc_J
