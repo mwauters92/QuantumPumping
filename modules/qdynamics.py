@@ -404,7 +404,7 @@ class Qdynamics():
         F_op = Qobj( U[-1] )
         
         #print(U)
-        f_states, f_energies = floquet_modes(h, tau, U=F_op)
+        f_states, self.f_energies = floquet_modes(h, tau, U=F_op)
 
         #states_ar = np.asarray( [np.asarray(f_s.data.to_array()) for f_s in f_states] )
         # construct U (columns are the eigenstates of Ham - in order of 
