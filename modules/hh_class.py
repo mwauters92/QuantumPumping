@@ -103,7 +103,7 @@ class HH_model:
 
 
     def set_Htpars(self, El, phase, delta_n=None, n_ave=0.5, Ej0=1.0, Ec0=4.0,  
-                   noise_Ej=0.0, noise_Ec=0.0, Mcut=2, return_pars=False):
+                   noise_Ej=0.0, noise_Ec=0.0, Mcut=2, U=0.0, return_pars=False):
 
 
         L = self.system_size 
@@ -123,9 +123,11 @@ class HH_model:
         self.n_ave=n_ave
         
         self.Mcut = Mcut  
+        self.Nh = tensor([qeye(Mcut) for j in range(L)]).dims
 
         self.Ej = Ej0 + (np.random.rand(L-1)-0.5)*noise_Ej
         self.Ec = Ec0 + (np.random.rand(L)-0.5)*noise_Ec
+        self.U = U
 
         self.noise_Ej = noise_Ej
         self.noise_Ec = noise_Ec
@@ -156,17 +158,24 @@ class HH_model:
         
         op_list = [qeye(self.Mcut) for j in range(L)]
         
-        H = Qobj( dims=tensor(op_list).dims )
+        H = Qobj( dims=self.Nh )
 
         for j in range(L):
 
             op_list[j] = self.Ec[j] * ( num(self.Mcut) - ng[j] )**2
             H += tensor(op_list)
             op_list[j] = qeye(self.Mcut)
+
+        if self.U > 0:
+            for j in range(L-1):
+                op_list[j] = (num(self.Mcut)-ng[j])
+                op_list[j+1] = (num(self.Mcut)-ng[j+1])
+                H += self.U*tensor(op_list)
+                op_list[j]=qeye(self.Mcut)
+
         
         return H + self.Hsc_J
-
-
+    
 
     def initial_state(self):
         """
@@ -239,7 +248,7 @@ class HH_model:
 
         '''
         op_list=[qeye(Mcut) for j in range(L)]
-        num_tot = Qobj(dims=tensor(op_list).dims)
+        num_tot = Qobj( dims=self.Nh )
         d_op=[]
         for j in range(L):
             op_list[j] = num(Mcut)
@@ -272,7 +281,7 @@ class HH_model:
 
         op_list=[qeye(Mcut) for j in range(L)]
 
-        Jcurrent=Qobj(dims=tensor(op_list).dims)
+        Jcurrent=Qobj( dims=self.Nh )
         current_density=[]    
         Ej=expand_variable(Ej,L-1)
 
@@ -326,7 +335,7 @@ class HH_model:
 
         op_list=[qeye(Mcut) for j in range(L)]
 
-        H=Qobj(dims=tensor(op_list).dims)
+        H=Qobj( dims=self.Nh )
 
         for j in range(L-1):
             op_list[j]=create(Mcut)
