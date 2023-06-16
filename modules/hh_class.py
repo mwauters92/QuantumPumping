@@ -103,11 +103,11 @@ class HH_model:
 
 
     def set_Htpars(self, El, phase, delta_n=None, n_ave=0.5, Ej0=1.0, Ec0=4.0,  
-                   U=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2, return_pars=False):
+                   U=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2, 
+                   return_pars=False):
 
 
         L = self.system_size 
-         
 
         self.phase, self.El = phase, El
         self.Ec0, self.Ej0 = Ec0, Ej0
@@ -121,7 +121,7 @@ class HH_model:
         j = np.arange(L)
         self.ng_t = lambda ph: delta_n*np.cos(ph - 2*np.pi/3*j)
         
-        self.n_ave=n_ave
+        self.n_ave = n_ave
         
         self.Mcut = Mcut  
         self.Nh = tensor([qeye(Mcut) for j in range(L)]).dims
@@ -142,14 +142,20 @@ class HH_model:
 
     def hamiltonian(self, t, args={}):
         """
-        Defines the time-dependent part of the Hamiltonian, i.e. the on-site energy. 
+
+        Defines the time-dependent part of the Hamiltonian, 
+        i.e. the on-site energy. 
         It requires Hsc_J to be defined before this function is called.
         The function is written so that it is callable by qutip.mesolve()
-        Parameters:
+
+        Arguments:
+        ----------
             t (float): time
         
         Returns:
+        --------
             H+Hsc_J: total time-dependent Hamiltonian
+
         """
        
         L = self.system_size      
@@ -160,13 +166,16 @@ class HH_model:
         
         H = Qobj( dims=self.Nh )
 
+        # chemical potential term
         for j in range(L):
 
             op_list[j] = self.Ec[j] * ( num(self.Mcut) - ng[j] )**2
             H += tensor(op_list)
             op_list[j] = qeye(self.Mcut)
 
-        if self.U>0.0:
+        # adding interactions 
+        if self.U > 0.0:
+
             for j in range(L-1):
                 op_list[j] =  ( num(self.Mcut) - ng[j] )
                 op_list[j+1] = ( num(self.Mcut) - ng[j+1] )             
@@ -188,8 +197,6 @@ class HH_model:
             the ground state of the system
 
         """
-
-        
         
         ng = self.n_ave + self.ng_t(0)
         Hsc = self.hamiltonian(0) 
@@ -198,7 +205,7 @@ class HH_model:
 
         # pick lowest-energy configuration 
         gs = states[0]
-        return gs #states[0]
+        return gs 
 
 
     def get_ops(self):
@@ -221,8 +228,9 @@ class HH_model:
 
         L = self.system_size 
                 
-        tot_current, current_density = self.get_bond_current(L, self.Mcut, self.Ej, self.El, 
-                                                        self.phase, PBC=self.pbc)
+        jc = self.get_bond_current(L, self.Mcut, self.Ej, self.El, 
+                                   self.phase, PBC=self.pbc)
+        tot_current, current_density = jc[0], jc[1] 
         tot_num = self.total_number(L, self.Mcut, density=True)
 
         #op_dict = {'tot_num': tot_num, 'current': tot_current}
@@ -235,18 +243,26 @@ class HH_model:
  
 
     def total_number(self,L, Mcut, density=False):
-        '''
-        defines the number operator for a chain of bosonic sites
-        Parameters:
+        """
+
+        Defines the number operator for a chain of bosonic sites.
+
+        Arguments:
+        ----------
             L (int): length of the chain (sites, not unit cells)
-            Mcut (int): truncation of the local Hilbert space. Mcut=2 for hard core bosons
-            density (bool): default False. If true it returns the local density operator instead of the number operator
+            Mcut (int): truncation of the local Hilbert space. Mcut=2 for 
+                        hard core bosons
+            density (bool): default False. If true it returns the local 
+                            density operator instead of the number operator
 
         Returns:
-            qutip.Qobj(dims=[Mcut ^ L]), either the total number operator N=sum_j n_j or the space resolved local
+        --------
+            qutip.Qobj(dims=[Mcut ^ L]), either the total number operator 
+                    N=sum_j n_j or the space resolved local
             boson number n_j
 
-        '''
+        """
+
         op_list=[qeye(Mcut) for j in range(L)]
         num_tot = Qobj( dims=self.Nh )
         d_op=[]
@@ -314,9 +330,6 @@ class HH_model:
         return Jcurrent/links, current_density
 
 
-
-
-
     def Hsc_Josephson(self,L,Ej,El,phlead, Mcut=2, PBC=False):
         '''
         Defines the static part of the HH Hamiltonian, i.e. the Josephson couplings.
@@ -365,6 +378,8 @@ class HH_model:
 #------------------------------------------------------------------------------
 # end of hh class
 #------------------------------------------------------------------------------
+
+
 def expand_variable(x,L):
     '''
     utility function: if x is an array or a list it does nothing, if x is a number it creates an array of 

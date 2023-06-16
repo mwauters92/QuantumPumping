@@ -11,7 +11,7 @@ import sys
 sys.path.append('../')
 
 import numpy as np 
-from qutip import Qobj, mesolve, expect, propagator, floquet_modes  
+from qutip import Qobj, mesolve, expect, propagator, floquet_modes, ket2dm  
 from modules import * 
 from types import *
 from scipy.integrate import simpson
@@ -412,13 +412,14 @@ class Qdynamics():
         #print(states_ar)
         #UF = Qobj( np.squeeze(states_ar).T )
         #UF = Qobj( np.identity( 16) )
-
-        self.U, self.UF, self.F_op = np.array(U), np.array(f_states), F_op
+        
+        UF = np.array(f_states)
+        self.U, self.UF, self.F_op = np.array(U), UF, F_op
         
         if return_floquet_elements:
-            floquet_elements = {'U': U, 'f_states': f_states, 'UF': UF, 
-                                'f_energies': f_energies, 'F_op': F_op,
-                                'time': time}
+            floquet_elements = {'U': np.array(U), 'f_states': f_states, 
+                                'UF': UF, 'f_energies': f_energies, 
+                                'F_op': F_op, 'time': time}
             return floquet_elements
 
 
@@ -663,11 +664,15 @@ class Qdynamics():
 
         """
 
-        UF = self.UF 
-        UF_dag = UF.dag()
-        rho0 = self.rho0
-
-        f_occ = np.diagonal( np.dot( UF_dag, np.dot( rho0, UF)) )
+        UF = np.squeeze( np.array( [uf_i.full() for uf_i in self.UF ] ) )
+        UF_dag = np.squeeze( np.conjugate( np.transpose( UF) ) ) #UF.dag()
+        if self.rho0.type == 'ket':
+            rho0 = ket2dm( self.rho0 )
+            rho0 = np.array( [r_i for r_i in rho0] )
+        else:
+            rho0 = self.rho0 
+        
+        f_occ = np.squeeze( np.diagonal( np.dot( UF_dag, np.dot( rho0, UF)) ) )
         f_occ = np.real( f_occ )
         return f_occ
 

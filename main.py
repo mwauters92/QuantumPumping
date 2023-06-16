@@ -24,7 +24,7 @@ msg = ('This script calculates ldos and total current in a chain of SC\
 parser = ArgumentParser(description=msg, 
                         formatter_class=ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('--code', metavar='', required=False, type=int, 
+parser.add_argument('--code', metavar='', type=int, 
                     help='Set a code name to the file.')
 
 # to be removed?
@@ -242,6 +242,7 @@ if __name__ == "__main__":
         with open(f'{path_name}/{mp["filename"]}.pickle', 'wb') as handle:
             pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    print("------------------------------------------------")
     print("--> Data are saved!") 
 
     #-------------------------------------------------------
