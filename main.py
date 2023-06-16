@@ -46,6 +46,9 @@ parser.add_argument('--ej0', metavar='', default=0.2, type=float,
 parser.add_argument('--ec0', metavar='', default=1.0, type=float, 
                     help=('The on-site charging energy. Can be either a single\
                     variable or a list of length L.'))
+parser.add_argument('--U', metavar='', default=0.0, type=float, 
+                    help=('The nearest neighbour interaction strength.'))
+
 parser.add_argument('--delta_n', metavar='', default=None, type=float, 
                     help=('The amplitude of the oscillations in the induced\
                     charge.') )
@@ -121,6 +124,7 @@ if __name__ == "__main__":
 
     mp['Ej0'] = args.ej0  
     mp['Ec0'] = args.ec0
+    mp['U'] = args.U
 
     if args.delta_n is None:
         mp['delta_n'] = 0.5 * args.ej0 / args.ec0 
@@ -187,7 +191,8 @@ if __name__ == "__main__":
             hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], 
                           n_ave=mp['average_ng'], Ej0=mp['Ej0'], 
                           Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
-                          noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'])
+                          noise_Ec=mp['noise_Ec'], U=mp['U'],
+                          Mcut=mp['Mcut'])
 
             # initialize the dynamics class
             hhqob = Qdynamics(hh)
