@@ -24,7 +24,7 @@ msg = ('This script calculates ldos and total current in a chain of SC\
 parser = ArgumentParser(description=msg, 
                         formatter_class=ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('--code', metavar='', required=True, type=int, 
+parser.add_argument('--code', metavar='', required=False, type=int, 
                     help='Set a code name to the file.')
 
 # to be removed?
@@ -52,6 +52,10 @@ parser.add_argument('--delta_n', metavar='', default=None, type=float,
 parser.add_argument('--ave_ng', metavar='', default=0.5, type=float, 
                     help=('The average value of the induced charge, sets\
                     the chemical potential.') )
+parser.add_argument('--U_interaction', metavar='', default=0.0, type=float, 
+                    help=('Nearest neighbors interaction strength.') )
+
+
 parser.add_argument('--noise_Ej', metavar='', default=0.0, type=float, 
                     help=('Noise of the Josephson coupling. Can be either a \
                     single variable or a list of length L-1.') )
@@ -119,6 +123,7 @@ if __name__ == "__main__":
 
     mp['Ej0'] = args.ej0  
     mp['Ec0'] = args.ec0
+    mp['U'] = args.U_interaction
 
     if args.delta_n is None:
         mp['delta_n'] = 0.5 * args.ej0 / args.ec0 
@@ -185,7 +190,7 @@ if __name__ == "__main__":
             hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], 
                           n_ave=mp['average_ng'], Ej0=mp['Ej0'], 
                           Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
-                          noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'] )
+                          noise_Ec=mp['noise_Ec'], Mcut=mp['Mcut'], U=mp['U'] )
 
             # initialize the dynamics class
             hhqob = Qdynamics(hh)
