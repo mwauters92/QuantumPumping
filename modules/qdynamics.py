@@ -545,7 +545,8 @@ class Qdynamics():
                      'period': tau, 'ti': ti, 'tf': tf, 'ni': 0, 'nf': 1} 
 
         #overlap between Floquet states and initial state
-        rho0_f = np.array([np.abs(self.rho0.overlap( UF_s )) for UF_s in self.UF])
+        rho0_f = self.floquet_projection()
+        #rho0_f = np.array([np.abs(self.rho0.overlap( UF_s )) for UF_s in self.UF])
         
         # FSstate_t is a (n_t,Nh) array that contains the evolved Floquet states
         FState_t = np.tensordot(self.U.reshape([n_t,1]),self.UF.reshape([1,Nh]),axes=[1,0])
