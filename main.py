@@ -40,10 +40,10 @@ parser.add_argument('--n_sites', metavar='', default=6, type=int,
 parser.add_argument('--PBC', action='store_true',  
                     help='Periodic boundary conditions')
 
-parser.add_argument('--ej0', metavar='', default=0.2, type=float, 
+parser.add_argument('--ej0', metavar='', default=1.0, type=float, 
                     help=('Josephson coupling. Can be either a single variable\
                     or a list of length L-1.') )
-parser.add_argument('--ec0', metavar='', default=1.0, type=float, 
+parser.add_argument('--ec0', metavar='', default=4.0, type=float, 
                     help=('The on-site charging energy. Can be either a single\
                     variable or a list of length L.'))
 parser.add_argument('--U', metavar='', default=0.0, type=float, 
