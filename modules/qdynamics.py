@@ -413,12 +413,11 @@ class Qdynamics():
         #UF = Qobj( np.squeeze(states_ar).T )
         #UF = Qobj( np.identity( 16) )
         
-        UF = np.array(f_states)
-        self.U, self.UF, self.F_op = np.array(U), UF, F_op
+        self.U, self.UF, self.F_op = np.array(U), np.array(f_states) , F_op
         
         if return_floquet_elements:
             floquet_elements = {'U': np.array(U), 'f_states': f_states, 
-                                'UF': UF, 'f_energies': f_energies, 
+                                'f_energies': f_energies, 
                                 'F_op': F_op, 'time': time}
             return floquet_elements
 
@@ -665,16 +664,18 @@ class Qdynamics():
 
         """
 
-        UF = np.squeeze( np.array( [uf_i.full() for uf_i in self.UF ] ) )
-        UF_dag = np.squeeze( np.conjugate( np.transpose( UF) ) ) #UF.dag()
         if self.rho0.type == 'ket':
-            rho0 = ket2dm( self.rho0 )
-            rho0 = np.array( [r_i for r_i in rho0] )
+            rho0_f = np.array([np.abs(self.rho0.overlap( UF_s )) for UF_s in self.UF])
+            f_occ = rho0_f**2 
+
         else:
+            UF = np.squeeze( np.array( [uf_i.full() for uf_i in self.UF ] ) )
+            UF_dag = np.squeeze( np.conjugate( np.transpose( UF) ) ) #UF.dag()
             rho0 = self.rho0 
         
-        f_occ = np.squeeze( np.diagonal( np.dot( UF_dag, np.dot( rho0, UF)) ) )
-        f_occ = np.real( f_occ )
+            f_occ = np.squeeze( np.diagonal( np.dot( UF_dag, np.dot( rho0, UF)) ) )
+            f_occ = np.real( f_occ )
+
         return f_occ
 
 #------------------------------------------------------------------------------
