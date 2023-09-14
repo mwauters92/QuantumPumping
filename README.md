@@ -7,5 +7,9 @@ scipy
 tqdm
 qutip 5.0
 IT IS NOT COMPATIBLE WITH QUTIP 4.7 (YET)
+pickle 
+matplotlib
+scienceplots
+
 
 this is a test
