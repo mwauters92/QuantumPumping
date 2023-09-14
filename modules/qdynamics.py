@@ -165,16 +165,6 @@ class Qdynamics():
         return res  
 
 
-    def solve_LME(self):
-        """
-        Solves the Lindblad Master equation, returning either the time
-        evolution of the state or the time evolution of some current operator.
-        
-        """
-
-        results = mesolve(self.H, self.rho0, self.t, progress_bar=True) 
-        return results
- 
 
     def expect_t(self, op, t, rho_t):
         """
@@ -562,97 +552,6 @@ class Qdynamics():
         q_inf= simpson(op_t_weighted,x=time_evolve)
         return q_inf 
 
-
-    def apply_floquet(self, ni=None, nf=None):
-        """
-
-        Evaluates expectation values using the floquet formalism. 
-
-        Arguments:
-        ----------
-        ni : int    (default: None) 
-            the initial time (in number of periods)
-        nf : int    (default: None) 
-            the final time (in number of periods)
-
-        Returns:
-        --------
-        
-        """
-        
-        # load variables from class dictionary (the following are for one period)
-        n_t = self.n_t      # time steps per period
-        tau = self.period       # period value
-        
-        # start from time 0 and evolve until to n_periods (provided by the model)
-        if (ni == None and nf == None):
-            n_evolve = self.n_periods
-            ni, nf = 0, n_evolve
-            ti, tf = 0.0, tau * n_evolve
-        else:       # evolve with given ni, nf  
-            assert nf > ni, 'nf must be larger than ni'
-            n_evolve = nf - ni
-            ti = ni * tau 
-            tf = nf * tau 
-        
-        # for whole time evolution, as we want, renew n_t & time
-        n_t_evolve = n_t * n_evolve
-        time_evolve = np.linspace( ti, tf, n_t_evolve) 
-
-        # save parameters that characterize dynamics
-        eval_pars = {'n_t_total': n_t_evolve, 'n_periods': n_evolve, 
-                     'period': tau, 'ti': ti, 'tf': tf, 'ni': ni, 'nf': nf} 
-
-        # load floquet elements from class dictionary 
-        U, UF, F_op = self.U, self.UF, self.F_op 
-       
-        # project initial state to the Floquet basis
-        UF_dag = UF.dag()
-        rho0 = self.rho0
-        rho0_f = np.dot( UF_dag, np.dot( rho0, UF ) )
-
-        # create a stack of Us
-        # U is only defined in the first period   
-        U_ext = np.vstack( [U]*n_evolve )   
-        
-        # create a stack of the ith powers of the floquet operator
-        temp_ls = [] 
-        ind_for_Fop = [ni+j for j in range(n_evolve)]
-        for i in ind_for_Fop:
-            F_op_nev = np.linalg.matrix_power( F_op, i) 
-            temp_ls = temp_ls + [F_op_nev]*n_t  
-
-        F_op_nev_ext = np.array( temp_ls ) 
-
-        # create a stack of rho0 tilde 
-        rho0_f_ext = np.array( [rho0_f]*n_t_evolve )
-        
-        # make the multiplications
-        U_Fn = np.einsum( 'kij,kjm->kim', U_ext, F_op_nev_ext)
-        UF_ext = np.array( [UF]*n_t_evolve )
-        U_Fn = np.einsum( 'kij,kjm->kim', U_Fn, UF_ext)
-        U_Fn_dag = np.conjugate( np.transpose( U_Fn, (0,2,1) ) ) 
-
-        # load operators
-        ops_dict = self.ops_dict 
-
-        expval_t = {nm: [] for nm in ops_dict.keys()}
-        for nm in ops_dict.keys():
-            for j, op_j in enumerate(ops_dict[nm]):
-            
-                op_t = np.array( [op_j(t_i) for t_i in time_evolve] )
-
-                pA = np.einsum( 'kij,kjm->kim', op_t, U_Fn)
-                pB = np.einsum( 'kij,kjm->kim', U_Fn_dag, pA)
-                pC = np.einsum( 'kij,kjm->kim', rho0_f_ext, pB)
-
-                # concenrn if to leave abs here!<------ (but then we lose info)
-                # perhaps np.real works better
-                expval_t[nm].append( np.real( np.einsum( 'kii->k', pC ) ) )
-
-        expval_t['time'] = time_evolve
-        expval_t['eval_pars'] = eval_pars
-        return expval_t
 
 
     def floquet_projection(self):
