@@ -31,27 +31,34 @@ parser.add_argument('--code', metavar='', type=int,
 parser.add_argument('--Mcut', metavar='', default=2, type=int, 
                     help=('Truncation of the local Hilbert space. Mcut=2 for\
                     hard core bosons.') )
+
 parser.add_argument('--num_periods', metavar='', default=1, type=int, 
                     help='number of periods used in the time evolution.')
+
 parser.add_argument('--nt', metavar='', default=301, type=int, 
                     help='Number of values of the time between 0 and 2pi.')
+
 parser.add_argument('--n_sites', metavar='', default=6, type=int, 
                     help='The number of sites.')
+
 parser.add_argument('--PBC', action='store_true',  
                     help='Periodic boundary conditions')
 
 parser.add_argument('--ej0', metavar='', default=1.0, type=float, 
                     help=('Josephson coupling. Can be either a single variable\
                     or a list of length L-1.') )
+
 parser.add_argument('--ec0', metavar='', default=4.0, type=float, 
                     help=('The on-site charging energy. Can be either a single\
                     variable or a list of length L.'))
+
 parser.add_argument('--U', metavar='', default=0.0, type=float, 
                     help=('The nearest neighbour interaction strength.'))
 
 parser.add_argument('--delta_n', metavar='', default=None, type=float, 
                     help=('The amplitude of the oscillations in the induced\
                     charge.') )
+
 parser.add_argument('--ave_ng', metavar='', default=0.5, type=float, 
                     help=('The average value of the induced charge, sets\
                     the chemical potential.') )
@@ -60,6 +67,7 @@ parser.add_argument('--ave_ng', metavar='', default=0.5, type=float,
 parser.add_argument('--noise_Ej', metavar='', default=0.0, type=float, 
                     help=('Noise of the Josephson coupling. Can be either a \
                     single variable or a list of length L-1.') )
+
 parser.add_argument('--noise_Ec', metavar='', default=0.0, type=float, 
                     help=('Noise of the on-site charging energy. Can be either\
                    a single variable or a list of length L.') )
@@ -69,10 +77,13 @@ parser.add_argument('--omega', metavar='', default=0.05, type=float,
 
 parser.add_argument('--El_start', metavar='', default=0.1, type=float, 
                     help='Initial value of the coupling with the leads.')
+
 parser.add_argument('--El_end', metavar='', default=1.5, type=float, 
                     help='Final value of the coupling with the leads.')
+
 parser.add_argument('--Nel', metavar='', default=20, type=int, 
                     help=('Number of values of the lead-island coupling') )
+
 parser.add_argument('--Nphi', metavar='', default=20, type=int, 
                     help=('Number of values of the phase difference of left\
                     and right lead between 0 and 2pi.') )
@@ -80,8 +91,10 @@ parser.add_argument('--Nphi', metavar='', default=20, type=int,
 parser.add_argument('--qinf', action='store_true', 
                     help=('Calculate the pumped charge in the infinite-time \
                     limit.') )
+
 parser.add_argument('--et', action='store_true', 
                     help='Calculate the instantaneous many-body spectrum.')
+
 parser.add_argument('--qephi', action='store_true', 
                     help='Calculate the quasi-energy spectrum.') 
 
@@ -127,6 +140,7 @@ if __name__ == "__main__":
     mp['U'] = args.U
 
     if args.delta_n is None:
+        # this choice it to reproduce the original HH model
         mp['delta_n'] = 0.5 * args.ej0 / args.ec0 
     else: 
         mp['delta_n'] = args.delta_n 
