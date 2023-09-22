@@ -577,10 +577,25 @@ class Qdynamics():
 
         return f_occ
     
-    def evolve(self):
+    def evolve(self, obs_list=None):
+        '''
+        Compute the time evolution of the model loaded in the Qdynamics class over the array of times self.t,
+        which is passed to Qdynamics along with the model parameters. 
+        
+        Parameters:
+            obs_list: list of qutip.Qobj() observables; the function erturns their expectation value for all times
+                      in self.t. If None, the default obervables are the local particle density and the current
+                      density.
+        Returns: expectation value of obs_list at all instant of times in self.t
+        '''
 
-        res = mesolve(self.H, self.rho0, self.t, e_ops=self.ops_dict['tot_num']+self.ops_dict['current_density'])  
-        return res.expect[:self.L], res.expect[self.L:]
+        if obs_list is None:
+            res = mesolve(self.H, self.rho0, self.t, e_ops=self.ops_dict['tot_num']+self.ops_dict['current_density'])  
+            return res.expect[:self.L], res.expect[self.L:]
+
+        else:
+            res = mesolve(self.H, self.rho0, self.t, e_ops=obs_list)  
+            return res.expect
 
 #------------------------------------------------------------------------------
 # end of qobs class
