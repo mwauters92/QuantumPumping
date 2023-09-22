@@ -92,6 +92,9 @@ parser.add_argument('--qinf', action='store_true',
                     help=('Calculate the pumped charge in the infinite-time \
                     limit.') )
 
+parser.add_argument('--qpump_finite', action='store_true',
+                    help='Compute time evolution over <num_periods> periods')
+
 parser.add_argument('--et', action='store_true', 
                     help='Calculate the instantaneous many-body spectrum.')
 
@@ -109,15 +112,19 @@ args = parser.parse_args()
 
 def set_sim_type(mp, args):
     
+    filename_ext = 'JJA_'
+    if args.qpump_finite:
+        mp['sim_type'] = 'Dynamics for a finite number of periods'
+        filename_ext += 'qpumpFinite_'
     if args.qinf:
         mp['sim_type'] = 'Pumped charge at the infinite time.'
-        filename_ext = 'qinf'
+        filename_ext += 'qinf_'
     if args.et:
         mp['sim_type'] = 'Instantaneous many-body spectrum.'
-        filename_ext = 'specEt'
+        filename_ext += 'specEt_'
     if args.qephi:
         mp['sim_type'] = 'Many-body quasi-energy spectrum.'
-        filename_ext = 'specQEphi'
+        filename_ext += 'specQEphi_'
 
     return filename_ext
 
@@ -160,7 +167,7 @@ if __name__ == "__main__":
     mp['comments'] = ['']
     filename_ext = set_sim_type(mp, args)
 
-    mp['filename'] = f'hhwb_{filename_ext}_{code}'    
+    mp['filename'] = f'{filename_ext}_{code}'    
 
     path_name = args.path_name
     mp['path_name'] = args.path_name
@@ -191,6 +198,11 @@ if __name__ == "__main__":
     hh.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
 
     curr = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
+    
+    if args.qpump_finite:
+        local_curr = np.zeros( (mp['el_num'], mp['phi_num'],mp['L'], mp['n_p']*mp['n_t']) ) 
+        density = np.zeros( (mp['el_num'], mp['phi_num'],mp['L'], mp['n_p']*mp['n_t']) ) 
+    
     etspec = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
     qespec_fen_ls = [] 
     qespec_focc_ls = [] 
@@ -211,6 +223,8 @@ if __name__ == "__main__":
             # initialize the dynamics class
             hhqob = Qdynamics(hh)
             
+            if args.qpump_finite:
+                density[j,k,:,:], local_curr[j,k,:,:] = hhqob.evolve()  
 
             if args.qinf or args.qephi:
                 
@@ -242,7 +256,9 @@ if __name__ == "__main__":
     if args.qephi:
         data_new['f_energies'] = qespec_fen_ls
         data_new['f_occ'] = qespec_focc_ls
-
+    if args.qpump_finite:
+        data_new['finite_time_current'] = local_curr
+        data_new['local_density'] = density
     # ----------------
 
     end = time.perf_counter()
