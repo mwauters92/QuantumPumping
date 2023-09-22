@@ -576,6 +576,11 @@ class Qdynamics():
             f_occ = np.real( f_occ )
 
         return f_occ
+    
+    def evolve(self):
+
+        res = mesolve(self.H, self.rho0, self.t, e_ops=self.ops_dict['tot_num']+self.ops_dict['current_density'])  
+        return res.expect[:self.L], res.expect[self.L:]
 
 #------------------------------------------------------------------------------
 # end of qobs class
