@@ -326,6 +326,7 @@ class HH_model:
             op_list[-1]=create(Mcut)
             op_jump_right=-0.5j*El*tensor(op_list)
             Jcurrent+=(op_jump_right+op_jump_right.dag())
+            current_density.append(op_jump_right+op_jump_right.dag())
             links=L+1
         return Jcurrent/links, current_density
 
