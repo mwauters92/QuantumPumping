@@ -24,6 +24,8 @@ msg = ('This script calculates ldos and total current in a chain of SC\
 parser = ArgumentParser(description=msg, 
                         formatter_class=ArgumentDefaultsHelpFormatter)
 
+parser.add_argument('--model', metavar='', default='HH', type=str,
+                    help=' <HH> for Harper-Hofstadter or <RM> for RiceMele model')
 parser.add_argument('--code', metavar='', type=int, 
                     help='Set a code name to the file.')
 
@@ -47,6 +49,9 @@ parser.add_argument('--PBC', action='store_true',
 parser.add_argument('--ej0', metavar='', default=1.0, type=float, 
                     help=('Josephson coupling. Can be either a single variable\
                     or a list of length L-1.') )
+
+parser.add_argument('--delta_ej', metavar='', default=1.0, type=float, 
+                    help=('Modulation of the Josephson coupling for thr RM model') )
 
 parser.add_argument('--ec0', metavar='', default=4.0, type=float, 
                     help=('The on-site charging energy. Can be either a single\
@@ -138,6 +143,7 @@ if __name__ == "__main__":
     
     code = args.code 
     to_save = True      # whether to save data or not  
+    model_type = args.model
 
     mp = {'omega': args.omega, 'n_p': args.num_periods, 'n_t': args.nt, 
           'pbc': args.PBC} 
@@ -145,7 +151,7 @@ if __name__ == "__main__":
     mp['Ej0'] = args.ej0  
     mp['Ec0'] = args.ec0
     mp['U'] = args.U
-
+    mp['dE'] = args.delta_ej
     if args.delta_n is None:
         # this choice it to reproduce the original HH model
         mp['delta_n'] = 0.5 * args.ej0 / args.ec0 
@@ -192,18 +198,23 @@ if __name__ == "__main__":
     start = time.perf_counter()
 
     # ----------------
+    if model_type == 'HH':
+        hh = HH_model()
+    elif model_type == 'RM': 
+        hh = RM_model()
+    else:
+        raise ValueError(f'Model {model_type} is not implemented. Please choose between HH and RM')
 
-    hh = HH_model() 
     hh.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
     hh.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
 
     curr = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
     
     if args.qpump_finite:
-        local_curr = np.zeros( (mp['el_num'], mp['phi_num'],mp['L'], mp['n_p']*mp['n_t']) ) 
+        local_curr = np.zeros( (mp['el_num'], mp['phi_num'], mp['n_p']*mp['n_t']) ) 
         density = np.zeros( (mp['el_num'], mp['phi_num'],mp['L'], mp['n_p']*mp['n_t']) ) 
     
-    etspec = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
+    etspec = []  
     qespec_fen_ls = [] 
     qespec_focc_ls = [] 
 
@@ -218,13 +229,13 @@ if __name__ == "__main__":
                           n_ave=mp['average_ng'], Ej0=mp['Ej0'], 
                           Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
                           noise_Ec=mp['noise_Ec'], U=mp['U'],
-                          Mcut=mp['Mcut'])
+                          Mcut=mp['Mcut'], delta_ej=mp['dE'])
 
             # initialize the dynamics class
             hhqob = Qdynamics(hh)
             
             if args.qpump_finite:
-                density[j,k,:,:], local_curr[j,k,:,:] = hhqob.evolve()  
+                density[j,k,:,:], local_curr[j,k,:] = hhqob.evolve()  
 
             if args.qinf or args.qephi:
                 
@@ -241,8 +252,9 @@ if __name__ == "__main__":
                 res = hhqob.instantaneous_energies()
                 #eg = hhqob.find_gap()
                 data_new['time'] = res['time'] 
-                etspec[j][k] = res['inst_energies']
-
+                etspec.append( res['inst_energies'] )
+                spectrum_shape = res['inst_energies'].shape
+                print(spectrum_shape)
             if args.qephi:
 
                 f_occ = hhqob.floquet_projection()
@@ -252,7 +264,7 @@ if __name__ == "__main__":
     if args.qinf: 
         data_new['current'] = curr
     if args.et: 
-        data_new['energies'] = etspec 
+        data_new['energies'] = np.array(etspec).reshape([args.Nel, args.Nphi, spectrum_shape[0], spectrum_shape[1]])
     if args.qephi:
         data_new['f_energies'] = qespec_fen_ls
         data_new['f_occ'] = qespec_focc_ls
