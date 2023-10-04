@@ -199,14 +199,14 @@ if __name__ == "__main__":
 
     # ----------------
     if model_type == 'HH':
-        hh = HH_model()
+        quantum_model = HH_model(mp)
     elif model_type == 'RM': 
-        hh = RM_model()
+        quantum_model = RM_model(mp)
     else:
         raise ValueError(f'Model {model_type} is not implemented. Please choose between HH and RM')
 
-    hh.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
-    hh.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
+    #quantum_model.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
+    #quantum_model.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
 
     curr = np.zeros( (mp['el_num'], mp['phi_num'] ) ) 
     
@@ -223,42 +223,43 @@ if __name__ == "__main__":
         qespec_fen_ls.append( [] ) 
         qespec_focc_ls.append( [] ) 
         for k, ph in tqdm( enumerate(phi_tab), desc="ph" ):
-
+            mp['El'] = el
+            mp['phase'] = ph
             # set values to the Hamiltonian parameters  
-            hh.set_Htpars(El=el, phase=ph, delta_n=mp['delta_n'], 
+            quantum_model.set_Htpars(mp)
+            '''delta_n=mp['delta_n'], 
                           n_ave=mp['average_ng'], Ej0=mp['Ej0'], 
                           Ec0=mp['Ec0'], noise_Ej=mp['noise_Ej'], 
                           noise_Ec=mp['noise_Ec'], U=mp['U'],
                           Mcut=mp['Mcut'], delta_ej=mp['dE'])
-
+            '''
             # initialize the dynamics class
-            hhqob = Qdynamics(hh)
+            quantum_model_dynamics = Qdynamics(quantum_model)
             
             if args.qpump_finite:
-                density[j,k,:,:], local_curr[j,k,:] = hhqob.evolve()  
+                density[j,k,:,:], local_curr[j,k,:] = quantum_model_dynamics.evolve()  
 
             if args.qinf or args.qephi:
                 
-                hhqob.create_floquet()
+                quantum_model_dynamics.create_floquet()
 
             if args.qinf: 
 
-                q = hhqob.q_floquet()
+                q = quantum_model_dynamics.q_floquet()
                 curr[j][k] = q
                 print(f'Charge in the infinite time limit :{q}')
 
             if args.et:
             
-                res = hhqob.instantaneous_energies()
-                #eg = hhqob.find_gap()
+                res = quantum_model_dynamics.instantaneous_energies()
                 data_new['time'] = res['time'] 
                 etspec.append( res['inst_energies'] )
                 spectrum_shape = res['inst_energies'].shape
                 print(spectrum_shape)
             if args.qephi:
 
-                f_occ = hhqob.floquet_projection()
-                qespec_fen_ls[j].append( hhqob.f_energies )
+                f_occ = quantum_model_dynamics.floquet_projection()
+                qespec_fen_ls[j].append( quantum_model_dynamics.f_energies )
                 qespec_focc_ls[j].append( f_occ )
 
     if args.qinf: 
