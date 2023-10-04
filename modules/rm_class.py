@@ -18,7 +18,7 @@ from qutip import Qobj, num, qeye, tensor, ket2dm, expect, create, destroy
 
 class RM_model: 
 
-    def __init__(self):
+    def __init__(self, mp):
         """
         
         Class initialization.
@@ -29,21 +29,16 @@ class RM_model:
 
         # set a seed for random number generator (default one) 
         self.set_seed()
+        
+        self.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
+        self.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
 
-        # set values to the lattice parameters (default ones)
-        self.set_lattice_pars()
-
-        # set values to the dynamic parameters (default ones)
-        self.set_dynamic_pars(omega=1.0)
         
         # initialize disorder (default: no disorder)
         self.random_disorder()
 
         # initilize the time-dependent parameters of the Hamiltonian
-        pars = {'E0': 5.0, 'dE': 2.0, 'D': 5.0, 
-                'e0_leads': 1.0, 'dE_leads': 0.0, 'ec0': 0.0, 'U': 0.0,
-                'phi_L': 0.0, 'phi_R': np.pi/3.0}
-        self.set_Htpars(pars) 
+        #self.set_Htpars(mp) 
 
         self.model = 'RiceMele'    
     def set_lattice_pars(self, L=6, pbc=False):
@@ -167,9 +162,7 @@ class RM_model:
 
 
 
-    def set_Htpars(self, El=0.0, phase=0.0, delta_n=0.2, n_ave=0.5, Ej0=1.0, Ec0=4.0,
-                    U=0.0, delta_ej=1.0, EJ1_shift=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2,
-                          return_pars=False):
+    def set_Htpars(self, model_pars, return_pars=False):
         """
         
         Sets up the time-dependent parameters of the Hamiltonian. 
@@ -187,27 +180,30 @@ class RM_model:
         """ 
 
         
-        self.E0 = Ej0
-        self.dE = delta_ej
-        self.delta = delta_n
-        self.Mcut = Mcut
+        self.E0 = model_pars['Ej0']
+        self.dE = model_pars['dE']
+        self.delta_n = model_pars['delta_n']
+        self.Mcut = model_pars['Mcut']
         L = self.system_size 
-        self.EJ1_shift = EJ1_shift 
-        self.El = El
+        self.EJ1_shift =  0.0 #model_pars['EJ1_shift'] 
+        self.El = model_pars['El']
 
-        self.Ec0 = Ec0      # self capacitance
-        self.U = U      # (nearest neighbour) cross capacitance
+        self.Ec0 = model_pars['Ec0']      # self capacitance
+        self.U = model_pars['U']      # (nearest neighbour) cross capacitance
 
-        self.phi_L = phase #        self.phi_R = pars['phi_R']
+        self.phi_L = model_pars['phase'] #        self.phi_R = pars['phi_R']
         j=np.arange(self.system_size)
         
-        self.Ej = Ej0 + (np.random.rand(L)-0.5)*noise_Ej + 0.5*(1+np.cos(j*np.pi))*EJ1_shift
-        self.Ec = Ec0 + (np.random.rand(L)-0.5)*noise_Ec
+        noise_Ej = model_pars['noise_Ej'] 
+        noise_Ec = model_pars['noise_Ec'] 
 
-        self.Nh = tensor([qeye(Mcut) for j in range(self.system_size)]).dims        
+        self.Ej = self.E0 + (np.random.rand(L)-0.5)*noise_Ej + 0.5*(1+np.cos(j*np.pi))*self.EJ1_shift
+        self.Ec = self.Ec0 + (np.random.rand(L)-0.5)*noise_Ec
+
+        self.Nh = tensor([qeye(self.Mcut) for j in range(self.system_size)]).dims        
         
         self.Ej_t = lambda ph: self.Ej + self.dE*np.cos(ph + j*np.pi)
-        self.ng_t = lambda ph: n_ave + delta_n*np.sin(ph+j*np.pi)
+        self.ng_t = lambda ph: model_pars['average_ng'] + self.delta_n*np.sin(ph+j*np.pi)
 
 
         # returns the time-dependent parameters if return_pars == True
