@@ -31,7 +31,7 @@ class HH_model:
 
         # set values to the dynamic parameters (default ones)
         self.set_dynamic_pars(omega=0.05)
-        
+        self.model = 'HarperHofstadter' 
 
         
     def set_lattice_pars(self, L=6, pbc=False):
@@ -103,7 +103,7 @@ class HH_model:
 
 
     def set_Htpars(self, El, phase, delta_n=None, n_ave=0.5, Ej0=1.0, Ec0=4.0,  
-                   U=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2, 
+                   U=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2, delta_ej=None, 
                    return_pars=False):
 
 
@@ -235,7 +235,7 @@ class HH_model:
 
         #op_dict = {'tot_num': tot_num, 'current': tot_current}
         #op_dict = {'tot_num': tot_num, 'current': current_density}
-        op_dict = {'tot_num': tot_num, 'current': tot_current, 
+        op_dict = {'tot_num': tot_num, 'current': tot_current, 'current_ev': [tot_current], 
                    'current_density': current_density}
 
         return op_dict 
