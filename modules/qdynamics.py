@@ -43,6 +43,7 @@ class Qdynamics():
         # dictionary of time-dependent operators
         self.ops_dict = model.get_ops()
 
+        self.model = model.model
 
     def instantaneous_energies(self):
         """
@@ -539,12 +540,19 @@ class Qdynamics():
         
         # FSstate_t is a (n_t,Nh) array that contains the evolved Floquet states
         FState_t = np.tensordot(self.U.reshape([n_t,1]),self.UF.reshape([1,Nh]),axes=[1,0])
-        
-        op_j = self.ops_dict['current']
+        if self.model == 'HarperHofstadter': 
+            op_j = self.ops_dict['current']
                    
-        # compute the expectation value of the current on each Floquet state at each time step
-        op_t = np.array([expect(op_j,state_f) for state_f in FState_t]).reshape(FState_t.shape)
+            # compute the expectation value of the current on each Floquet state at each time step
+            op_t = np.array([expect(op_j,state_f) for state_f in FState_t]).reshape(FState_t.shape)
 
+
+        if self.model == 'RiceMele':
+            op_t=[]
+            for i_t, t in enumerate(self.t[:n_t]):
+                op_j = self.ops_dict['current_op'](t)
+                op_t.append([expect(op_j, state_f) for state_f in FState_t[i_t,:]])
+            op_t = np.array(op_t).reshape(FState_t.shape)                
         # sum over floqeut states weighted by their occupation number
         op_t_weighted = np.tensordot(rho0_f, op_t, axes=[0,1])
         
@@ -584,14 +592,13 @@ class Qdynamics():
         
         Parameters:
             obs_list: list of qutip.Qobj() observables; the function erturns their expectation value for all times
-                      in self.t. If None, the default obervables are the local particle density and the current
-                      density.
+                      in self.t. If None, the default obervables are the local particle density and the total current
         Returns: expectation value of obs_list at all instant of times in self.t
         '''
 
         if obs_list is None:
-            res = mesolve(self.H, self.rho0, self.t, e_ops=self.ops_dict['tot_num']+self.ops_dict['current_density'])  
-            return res.expect[:self.L], res.expect[self.L:]
+            res = mesolve(self.H, self.rho0, self.t, e_ops=self.ops_dict['tot_num']+self.ops_dict['current_ev'])  
+            return res.expect[:self.L] , res.expect[-1]
 
         else:
             res = mesolve(self.H, self.rho0, self.t, e_ops=obs_list)  
