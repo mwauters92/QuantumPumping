@@ -16,21 +16,24 @@ from qutip import Qobj, num, qeye, tensor, ket2dm, expect, create, destroy
 
 class HH_model: 
 
-    def __init__(self):
+    def __init__(self, mp):
         """
         
         Class initialization.
 
         """
 
+        self.set_lattice_pars(L=mp['L'], pbc=mp['pbc'])
+        self.set_dynamic_pars(omega=mp['omega'], n_p=mp['n_p'], n_t=mp['n_t'])
         # set a seed for random number generator (default one) 
         self.set_seed()
 
-        # set values to the lattice parameters (default ones)
-        self.set_lattice_pars()
 
         # set values to the dynamic parameters (default ones)
-        self.set_dynamic_pars(omega=0.05)
+        #self.set_dynamic_pars(omega=0.05)
+
+
+
         self.model = 'HarperHofstadter' 
 
         
@@ -102,35 +105,34 @@ class HH_model:
         np.random.seed(seed)
 
 
-    def set_Htpars(self, El, phase, delta_n=None, n_ave=0.5, Ej0=1.0, Ec0=4.0,  
-                   U=0.0, noise_Ej=0.0, noise_Ec=0.0, Mcut=2, delta_ej=None, 
-                   return_pars=False):
+    def set_Htpars(self, model_pars, return_pars=False):
 
 
         L = self.system_size 
 
-        self.phase, self.El = phase, El
-        self.Ec0, self.Ej0 = Ec0, Ej0
-        self.U = U
-        
+        self.phase, self.El = model_pars['phase'], model_pars['El']
+        self.Ec0, self.Ej0 = model_pars['Ec0'] ,model_pars['Ej0']
+        self.U = model_pars['U']
+        delta_n = model_pars['delta_n']
+
         if delta_n is None:
-            self.delta_n = 0.5*Ej0/Ec0
+            self.delta_n = 0.5*self.Ej0/self.Ec0
         else:
             self.delta_n = delta_n
         
         j = np.arange(L)
         self.ng_t = lambda ph: delta_n*np.cos(ph - 2*np.pi/3*j)
         
-        self.n_ave = n_ave
+        self.n_ave = model_pars['average_ng']
         
-        self.Mcut = Mcut  
-        self.Nh = tensor([qeye(Mcut) for j in range(L)]).dims
+        self.Mcut = model_pars['Mcut']  
+        self.Nh = tensor([qeye(self.Mcut) for j in range(L)]).dims
+        self.noise_Ej = model_pars['noise_Ej']
+        self.noise_Ec = model_pars['noise_Ec']
 
-        self.Ej = Ej0 + (np.random.rand(L-1)-0.5)*noise_Ej
-        self.Ec = Ec0 + (np.random.rand(L)-0.5)*noise_Ec
+        self.Ej = self.Ej0 + (np.random.rand(L-1)-0.5)*self.noise_Ej
+        self.Ec = self.Ec0 + (np.random.rand(L)-0.5)*self.noise_Ec
 
-        self.noise_Ej = noise_Ej
-        self.noise_Ec = noise_Ec
         
         self.Hsc_J = self.Hsc_Josephson(self.system_size, self.Ej, self.El, 
                                         self.phase, self.Mcut, self.pbc)
