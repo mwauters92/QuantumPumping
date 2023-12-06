@@ -8,8 +8,8 @@
 #------------------------------------------------------------------------------
 
 import numpy as np 
-from qutip import Qobj, num, qeye, tensor, ket2dm, expect, create, destroy  
-
+from qutip import Qobj, num, qeye, tensor, ket2dm, expect  
+from modules.custom_operators import *
 #------------------------------------------------------------------------------
 # hhm class 
 #------------------------------------------------------------------------------
@@ -304,8 +304,8 @@ class HH_model:
         Ej=expand_variable(Ej,L-1)
 
         for j in range(L-1):
-            op_list[j]=create(Mcut)
-            op_list[j+1]=destroy(Mcut)
+            op_list[j]=mycreate(Mcut)
+            op_list[j+1]=mydestroy(Mcut)
             op_local_jump = -0.5j*Ej[j]*tensor(op_list)
             Jcurrent+= (op_local_jump+op_local_jump.dag())
             current_density.append(op_local_jump+op_local_jump.dag())
@@ -313,19 +313,19 @@ class HH_model:
 
         if PBC:
             op_list=[qeye(Mcut) for j in range(L)]
-            op_list[-1] = create(Mcut)
-            op_list[0]=destroy(Mcut)
+            op_list[-1] = mycreate(Mcut)
+            op_list[0]=mydestroy(Mcut)
             op_local_jump = -0.5j*Ej[0]*tensor(op_list)
             Jcurrent+= (op_local_jump+op_local_jump.dag())
             current_density.append(op_local_jump+op_local_jump.dag())
             links=L
         else: 
             op_list=[qeye(Mcut) for j in range(L)]
-            op_list[0]=destroy(Mcut)
+            op_list[0]=mydestroy(Mcut)
             op_jump_left = -0.5j*np.exp(-1j*phlead)*El*tensor(op_list) # CHECK signs!!
             Jcurrent+= (op_jump_left+op_jump_left.dag())
             op_list[0]=qeye(Mcut)
-            op_list[-1]=create(Mcut)
+            op_list[-1]=mycreate(Mcut)
             op_jump_right=-0.5j*El*tensor(op_list)
             Jcurrent+=(op_jump_right+op_jump_right.dag())
             current_density.append(op_jump_right+op_jump_right.dag())
@@ -354,25 +354,25 @@ class HH_model:
         H=Qobj( dims=self.Nh )
 
         for j in range(L-1):
-            op_list[j]=create(Mcut)
-            op_list[j+1]=destroy(Mcut)
+            op_list[j]=mycreate(Mcut)
+            op_list[j+1]=mydestroy(Mcut)
             op_local_jump = -0.5*Ej[j]*tensor(op_list)
             H+= (op_local_jump+op_local_jump.dag())
             op_list[j] = qeye(Mcut)
 
         if PBC:
             op_list=[qeye(Mcut) for j in range(L)]
-            op_list[-1] = create(Mcut)
-            op_list[0]=destroy(Mcut)
+            op_list[-1] = mycreate(Mcut)
+            op_list[0]=mydestroy(Mcut)
             op_local_jump = -0.5*Ej[j]*tensor(op_list)
             H+= (op_local_jump+op_local_jump.dag())
         else:
             op_list=[qeye(Mcut) for j in range(L)]
-            op_list[0]=destroy(Mcut)
+            op_list[0]=mydestroy(Mcut)
             op_jump_left = -0.5*El*np.exp(-1j*phlead)*tensor(op_list)
             H+= (op_jump_left+op_jump_left.dag())
             op_list[0]=qeye(Mcut)
-            op_list[-1]=create(Mcut)
+            op_list[-1]=mycreate(Mcut)
             op_jump_right = -0.5*El*tensor(op_list)
             H+=(op_jump_right+op_jump_right.dag())
 
@@ -385,7 +385,7 @@ class HH_model:
 
 def expand_variable(x,L):
     '''
-    utility function: if x is an array or a list it does nothing, if x is a number it creates an array of 
+    utility function: if x is an array or a list it does nothing, if x is a number it mycreates an array of 
     dimension L with x in each entry.
     '''
     if np.size(x)==1:
@@ -431,25 +431,25 @@ def Hsc_chain_static(L, ng, Ec, Ej,El, phlead,  Mcut=2, return_dimension_only=Fa
     
     # interaction
     for j in range(L-1):
-        op_list[j]=create(Mcut)
-        op_list[j+1]=destroy(Mcut)
+        op_list[j]=mycreate(Mcut)
+        op_list[j+1]=mydestroy(Mcut)
         op_local_jump = -0.5*Ej[j]*tensor(op_list) 
         H+= (op_local_jump+op_local_jump.dag())
         op_list[j] = qeye(Mcut)
     
     if PBC:
         op_list=[qeye(Mcut) for j in range(L)]
-        op_list[-1] = create(Mcut)
-        op_list[0] = destroy(Mcut)
+        op_list[-1] = mycreate(Mcut)
+        op_list[0] = mydestroy(Mcut)
         op_local_jump = -0.5*Ej[0]*tensor(op_list)
         H+= (op_local_jump+op_local_jump.dag())
     else:
         op_list=[qeye(Mcut) for j in range(L)]
-        op_list[0]=destroy(Mcut)
+        op_list[0]=mydestroy(Mcut)
         op_jump_left = -0.5*El*np.exp(-1j*phlead)*tensor(op_list)
         H+= (op_jump_left+op_jump_left.dag())
         op_list[0]=qeye(Mcut)
-        op_list[-1]=create(Mcut)
+        op_list[-1]=mycreate(Mcut)
         op_jump_right = -0.5*El*tensor(op_list)
         H+=(op_jump_right+op_jump_right.dag())
         
