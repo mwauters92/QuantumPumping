@@ -45,7 +45,7 @@ class Qdynamics():
 
         self.model = model.model
 
-    def instantaneous_energies(self):
+    def instantaneous_energies(self, sparse=False, num_level=None):
         """
 
         Obtain the instantaneous energies as a function of time. 
@@ -57,17 +57,33 @@ class Qdynamics():
             a dictionary with the time domain and the instantaneous energies
 
         """
-
-        n_en = 2 ** self.L
-        energies = np.zeros( (self.n_t * self.n_periods, n_en) )
-        for i, t_i in enumerate( np.nditer( self.t ) ): 
+        berry_phase = 1.0
+        if num_level is None: 
+            n_en = 2 ** self.L
+        else:
+            n_en = num_level
+            sparse = True
+        energies = np.zeros( [self.n_t , n_en] )
+        for i, t_i in enumerate( self.t[:self.n_t] ): 
             ham = self.H(t_i) 
-            energies[i] = np.real( ham.eigenenergies() )
+            if sparse:	
+                #print(ham.dims, ham.data)
+                energies[i,:], states = ham.eigenstates(sparse=True,eigvals=n_en) 
+                psi0_new = states[0]
+                if i ==0: 
+                    psi_init = states[0]
+                elif i > 0 and i < self.n_t * self.n_periods -1: 
+                    berry_phase *= psi0_new.overlap(psi0_old)
+                else:
+                    berry_phase *= psi_init.overlap(psi0_old)
 
+                psi0_old = psi0_new
+            else:
+                energies[i] = np.real( ham.eigenenergies() )
         energies = np.asarray( energies )
         self.inst_energies = energies 
 
-        res = {'time': self.t, 'inst_energies': energies}
+        res = {'time': self.t, 'inst_energies': energies, 'berry_phase':(1j*np.log(berry_phase)).real}
         return res 
 
 
