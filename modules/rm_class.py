@@ -9,7 +9,8 @@
 
 import numpy as np 
 from qutip import sigmap, sigmam, sigmaz, identity   
-from qutip import Qobj, num, qeye, tensor, ket2dm, expect, create, destroy
+from qutip import Qobj, num, qeye, tensor, ket2dm, expect
+from modules.custom_operators import *
 
 
 #------------------------------------------------------------------------------
@@ -201,7 +202,7 @@ class RM_model:
         self.Ec = self.Ec0 + (np.random.rand(L)-0.5)*noise_Ec
 
         self.Nh = tensor([qeye(self.Mcut) for j in range(self.system_size)]).dims        
-        
+        print(f'Hilber space dimension for {self.system_size} islands with cutoff {self.Mcut}: {self.Nh}')       
         self.Ej_t = lambda ph: self.Ej + self.dE*np.cos(ph + j*np.pi)
         self.ng_t = lambda ph: model_pars['average_ng'] + self.delta_n*np.sin(ph+j*np.pi)
 
@@ -236,9 +237,10 @@ class RM_model:
         """
 
         N, L = self.n_cells, self.system_size
+        #print('orpo', self.Nh)
         H = Qobj(dims=self.Nh)
-
-        cj, cdagj, numj = destroy(self.Mcut), create(self.Mcut), num(self.Mcut)
+        #print('wtf')
+        cj, cdagj, numj = mydestroy(self.Mcut), mycreate(self.Mcut), num(self.Mcut)
         idd = qeye(self.Mcut)
         
         # we evaluate the Ej_t and ng_t functions at ph=omega*t
@@ -345,8 +347,8 @@ class RM_model:
         Jcurrent=Qobj( dims=self.Nh )
         current_density=[]    
         for j in range(L-1):
-            op_list[j]=create(Mcut)
-            op_list[j+1]=destroy(Mcut)
+            op_list[j]=mycreate(Mcut)
+            op_list[j+1]=mydestroy(Mcut)
             op_local_jump = -0.5j*Ej[j]*tensor(op_list)
             Jcurrent+= (op_local_jump+op_local_jump.dag())
             current_density.append(op_local_jump+op_local_jump.dag())
@@ -354,19 +356,19 @@ class RM_model:
 
         if PBC:
             op_list=[qeye(Mcut) for j in range(L)]
-            op_list[-1] = create(Mcut)
-            op_list[0]=destroy(Mcut)
+            op_list[-1] = mycreate(Mcut)
+            op_list[0]=mydestroy(Mcut)
             op_local_jump = -0.5j*Ej[0]*tensor(op_list)
             Jcurrent+= (op_local_jump+op_local_jump.dag())
             current_density.append(op_local_jump+op_local_jump.dag())
             links=L
         else: 
             op_list=[qeye(Mcut) for j in range(L)]
-            op_list[0]=destroy(Mcut)
+            op_list[0]=mydestroy(Mcut)
             op_jump_left = -0.5j*np.exp(-1j*phlead)*El*tensor(op_list) # CHECK signs!!
             Jcurrent+= (op_jump_left+op_jump_left.dag())
             op_list[0]=qeye(Mcut)
-            op_list[-1]=create(Mcut)
+            op_list[-1]=mycreate(Mcut)
             op_jump_right=-0.5j*El*tensor(op_list)
             Jcurrent+=(op_jump_right+op_jump_right.dag())
             current_density.append(op_jump_right+op_jump_right.dag())
