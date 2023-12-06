@@ -217,6 +217,7 @@ if __name__ == "__main__":
     etspec = []  
     qespec_fen_ls = [] 
     qespec_focc_ls = [] 
+    berry_phases = []            
 
     for j, el in tqdm( enumerate(el_tab), desc="El" ):
     
@@ -250,12 +251,15 @@ if __name__ == "__main__":
                 print(f'Charge in the infinite time limit :{q}')
 
             if args.et:
-            
-                res = quantum_model_dynamics.instantaneous_energies()
+                if quantum_model.Mcut > 2:
+                    res = quantum_model_dynamics.instantaneous_energies(num_level=2)
+                else:
+                    res = quantum_model_dynamics.instantaneous_energies()
                 data_new['time'] = res['time'] 
                 etspec.append( res['inst_energies'] )
                 spectrum_shape = res['inst_energies'].shape
                 print(spectrum_shape)
+                berry_phases.append(res['berry_phase'])
             if args.qephi:
 
                 f_occ = quantum_model_dynamics.floquet_projection()
@@ -266,6 +270,7 @@ if __name__ == "__main__":
         data_new['current'] = curr
     if args.et: 
         data_new['energies'] = np.array(etspec).reshape([args.Nel, args.Nphi, spectrum_shape[0], spectrum_shape[1]])
+        data_new['berry_phases'] = np.array(berry_phases).reshape([args.Nel, args.Nphi])
     if args.qephi:
         data_new['f_energies'] = qespec_fen_ls
         data_new['f_occ'] = qespec_focc_ls
