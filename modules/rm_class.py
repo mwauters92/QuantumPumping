@@ -202,7 +202,7 @@ class RM_model:
         self.Ec = self.Ec0 + (np.random.rand(L)-0.5)*noise_Ec
 
         self.Nh = tensor([qeye(self.Mcut) for j in range(self.system_size)]).dims        
-        print(f'Hilber space dimension for {self.system_size} islands with cutoff {self.Mcut}: {self.Nh}')       
+        print(f'Hilbert space dimension for {self.system_size} islands with cutoff {self.Mcut}: {self.Nh}')       
         self.Ej_t = lambda ph: self.Ej + self.dE*np.cos(ph + j*np.pi)
         self.ng_t = lambda ph: model_pars['average_ng'] + self.delta_n*np.sin(ph+j*np.pi)
 
@@ -237,9 +237,7 @@ class RM_model:
         """
 
         N, L = self.n_cells, self.system_size
-        #print('orpo', self.Nh)
         H = Qobj(dims=self.Nh)
-        #print('wtf')
         cj, cdagj, numj = mydestroy(self.Mcut), mycreate(self.Mcut), num(self.Mcut)
         idd = qeye(self.Mcut)
         
